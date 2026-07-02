@@ -48,8 +48,19 @@ def check_fastapi():
     print("[ok] fastapi        /health responds 200")
 
 
+def check_sqlite():
+    import sqlite3
+    c = sqlite3.connect(":memory:")
+    c.execute("create table t(x)")
+    c.execute("insert into t values (42)")
+    val = c.execute("select x from t").fetchone()[0]
+    assert val == 42, val
+    print(f"[ok] sqlite         round-trip write/read, engine {sqlite3.sqlite_version}")
+
+
 if __name__ == "__main__":
     check_imports()
     check_hcl2_parse()
     check_fastapi()
+    check_sqlite()
     print("\nAll green. Freeze it:  python -m pip freeze > requirements.txt")
