@@ -3,3 +3,10 @@
 .env*
 
 .venv/
+
+# SQLite scan databases
+*.db
+__pycache__/
+*.pyc
+
+.claude/
