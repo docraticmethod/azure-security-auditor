@@ -51,10 +51,24 @@
 
 ---
 
-## Turn 02 — [next]
+## Turn 02 — Fixes (verify-first)
+**Started:** July 4, 2026 1:22 pm PDT
 **Prompt:**
-> [Blake to fill in the next instruction — e.g. add more rules (Key Vault soft-delete, NSG for other ports, unencrypted disks), add auth to the API, or dockerize.]
+> Two items — investigate before changing anything, "don't fix it if it's not broken."
+> 1. Streamlit severity chart reportedly plots y inverted (0 at top, bars hanging down); suspect an Altair scale/sort flip.
+> 2. Confirm the python-hcl2 quote-quirk mitigation is intact — no rule bypasses the `app/hcl_normalize.py` choke point by calling `hcl2.load` or comparing raw values; verify selftest still asserts 8 findings.
 
-**Elapsed (real):** [FILL]
+**Findings:**
+- **hcl2 choke point — INTACT, no change.** `hcl2` is imported only inside `app/hcl_normalize.py` (`hcl2_load`). All three rule modules import only `Resource` from `app.hcl_normalize` and read values exclusively via `resource.attr()` / `resource.has()`, both routed through `unq()`. No rule compares raw hcl2 values or calls `hcl2.load`. `grep` across `app/` confirms zero bypasses.
+- **selftest — GREEN.** `python -m app.selftest` → 8 findings (5 CRITICAL, 3 HIGH; AZ-NET-001×3, AZ-SQL-001×2, AZ-STG-001×3), zero false positives.
+- **Chart y-axis — spec is clean, but hardened anyway.** Inspected the exact Vega-Lite spec `st.bar_chart` emits via `built_in_chart_utils.generate_chart`: y is `quantitative` with empty `scale: {}` (no `reverse`), x ordinal, plain `bar` mark — no inversion in streamlit 1.58.0 / altair 6.2.2. Per architect direction, replaced the implicit `st.bar_chart` with an explicit `st.altair_chart` so the axis and severity order are deterministic and no longer at the mercy of Streamlit defaults.
+
+**Actions:**
+- Replaced `st.bar_chart(chart, color="#b3001b")` in `dashboard.py` with an explicit Altair bar chart: x sorted by `SEV_ORDER`, y quantitative with `scale=alt.Scale(domainMin=0, reverse=False)` and integer ticks, per-severity colors from `SEV_COLOR`, count labels on bars.
+
+**Verification:** `app.selftest` ✓ · rule/normalizer grep audit ✓ · Vega-Lite spec inspection ✓ · dashboard import/compile ✓
+
+**Finished:** July 4, 2026 1:32 pm PDT
+**Elapsed (real):** ~10 min (1:22 pm → 1:32 pm)
 
 ---

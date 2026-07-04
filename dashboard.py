@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 
+import altair as alt
 import pandas as pd
 import requests
 import streamlit as st
@@ -100,8 +101,35 @@ df = pd.DataFrame(findings)
 df["severity"] = pd.Categorical(df["severity"], categories=SEV_ORDER, ordered=True)
 df = df.sort_values(["severity", "resource"])
 
-chart = df["severity"].value_counts().reindex(SEV_ORDER).fillna(0).astype(int)
-st.bar_chart(chart, color="#b3001b")
+# Explicit Altair chart so the y-axis origin/direction and severity order are
+# deterministic (not left to st.bar_chart's implicit encoding).
+counts = df["severity"].value_counts().reindex(SEV_ORDER).fillna(0).astype(int)
+chart_df = pd.DataFrame({"severity": SEV_ORDER, "count": counts.values})
+
+bars = (
+    alt.Chart(chart_df)
+    .mark_bar()
+    .encode(
+        x=alt.X("severity:N", sort=SEV_ORDER, title="Severity"),
+        y=alt.Y(
+            "count:Q",
+            title="Findings",
+            scale=alt.Scale(domainMin=0, reverse=False),
+            axis=alt.Axis(tickMinStep=1),
+        ),
+        color=alt.Color(
+            "severity:N",
+            scale=alt.Scale(
+                domain=SEV_ORDER,
+                range=[SEV_COLOR[s] for s in SEV_ORDER],
+            ),
+            legend=None,
+        ),
+        tooltip=["severity", "count"],
+    )
+)
+labels = bars.mark_text(dy=-6, color="#666").encode(text="count:Q")
+st.altair_chart(bars + labels, use_container_width=True)
 
 # ── Findings table + drill-down ────────────────────────────────────────────
 st.subheader("Findings")

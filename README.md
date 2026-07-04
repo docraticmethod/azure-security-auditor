@@ -4,6 +4,15 @@ API-first scanner that audits Azure **Terraform** for common security
 misconfigurations, persists findings to SQLite, and visualizes them in a
 Streamlit dashboard.
 
+
+## Slide Deck
+
+
+[azure-security-auditor slides](https://docs.google.com/presentation/d/1s_f0BxIe3Yo13w-dxk5XKCHIiek6vdNK)
+
+
+
+
 ## Architecture
 
 ```
